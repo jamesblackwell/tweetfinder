@@ -24,6 +24,11 @@ class Links extends CI_Controller {
             $data['result'] = $this->Links_model->process_links($this->input->post('links_to_check'));
         }
         
+        
+        //test
+        //$this->load->model('Links_model');
+        //$data['result'] = $this->Links_model->process_links('http://www.alessiomadeyski.com/why-i-stopped-meet-your-seo/');
+        
         return $this->output->set_content_type('application/json')->set_output(json_encode($data));
     }
     

@@ -10,6 +10,11 @@
 	<p class="lead">
 		You're in luck. Just paste those links one per line below and TweetFinder will work it's magic.
 	</p>
+	<a href="https://twitter.com/share" class="twitter-share-button" data-via="jetrank">Tweet</a>
+
+<p>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+</p>
 	<textarea id="links_to_check" name="links" class="span7" style="height: 230px;"></textarea>
 	<br />
 	<br />
@@ -36,7 +41,11 @@
 	<tbody>
 		{{#result}}
 		<tr>
-			<td>{{original_link}}</td>
+			<td>
+			    <a target="_blank" href="{{original_link}}">
+			    {{original_link}}
+		        </a>
+		    </td>
 			<td class="center">
 			    {{#if twitter_account}}
 			     <img src="https://api.twitter.com/1/users/profile_image?screen_name={{twitter_account}}&amp;size=normal" class="avatar hidden-phone">

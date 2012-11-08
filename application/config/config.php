@@ -15,7 +15,7 @@
 |
 */
 
-$config['base_url'] = 'http://app.tweetfinder.com/';
+$config['base_url'] = 'http://jetrank.com/tf/';
 
 if ($_SERVER['SERVER_ADDR'] == '127.0.0.1')
     $config['base_url'] = '';

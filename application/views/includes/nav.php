@@ -7,7 +7,6 @@
 			<a href="<?=base_url('about')?>">About</a>
 		</li>
 	</ul>
-	<h3 class="muted">TweetFinder</h3>
+	<h3 class="muted">TweetFinder <small>by <a href="http://jetrank.com">JetRank.com</a></small></h3>
 </div>
-
 <hr>

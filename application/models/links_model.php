@@ -52,7 +52,7 @@ class Links_model extends CI_Model {
         foreach ($links as $key => $link) 
         {
             $result[$key] = $this->twitter_finder->fetch($link);
-            $result[$key]['original_link'] = $link;
+            $result[$key]['original_link'] = prep_url($link);
         }
         return $result;
     }

@@ -53,7 +53,7 @@ class Twitter_finder {
             //note done yet :)
             return FALSE;
         }
-        
+
         return FALSE;
     }
 
@@ -120,15 +120,38 @@ class Twitter_finder {
 
             //at this point, we should have a twitter.com/** URL left
             //which is quite likely to be an account URL
-            //first we're looking if there is a twitter URL with a
-            //username matching the domain
-            
+
+            //strip the url for the hostname - tld
+            $domain = $this->get_host_no_tld();
+
+            //skip very short domains (high chance of matching incorrectly
+            // to another param)
+            if (strlen($domain) > 4)
+            {
+                //if it matches the domain (stripped of tld) return
+                if ($this->search_link_for_username($href, $domain))
+                {
+                    $twitter_account = $this->extract_username_from_url($href);
+                    if ( ! $twitter_account)
+                        $twitter_account = $domain;
+
+                    //result should be the parsed domain name which == username
+                    $this->results = array(
+                        'find_method' => 'matching_domain',
+                        'raw_url_found' => $href,
+                        'twitter_account' => $twitter_account
+                    );
+                    //results
+                    return TRUE;
+                }
+            }
+
             //see if it's a "follow us" type link
-            if ($this->is_anchor_follow_link($a->nodeValue))
+            if ($this->is_anchor_follow_link($a))
             {
                 //it is, extract the username
                 $twitter_account = $this->extract_username_from_url($href);
-                
+
                 $this->results = array(
                     'find_method' => 'on_page_link',
                     'twitter_account' => $twitter_account,
@@ -138,23 +161,6 @@ class Twitter_finder {
                 return TRUE;
             }
 
-            //strip the url for the hostname - tld
-            $domain = $this->get_host_no_tld();
-
-            //if it matches the domain (stripped of tld) return
-            if ($this->search_link_for_username($href, $domain))
-            {
-                //result should be the parsed domain name which == username
-                $this->results = array(
-                    'find_method' => 'matching_domain',
-                    'twitter_account' => $domain
-                );
-
-                //results
-                return TRUE;
-            }
-
-            
         }
         return FALSE;
     }
@@ -165,14 +171,29 @@ class Twitter_finder {
      * Parse the url and return the twitter username
      * Pretty simple approach, utilises existing functions to clean url
      * plus some extra to get rid of some common twitter stuff
-     * then splits the url by remaining
+     * then splits the url by remaining slashes if they exist
      *
+     * @author James Blackwell
      */
     public function extract_username_from_url($href)
     {
+        //check fold old intent style urls that we can parse easily
+        if (stristr($href, 'screen_name='))
+        {
+            parse_str(parse_url($href, PHP_URL_QUERY), $output);
+            return $output['screen_name'];
+        }
+
+        //if the above diddnt work, try and "deconstruct" the url
         //remove http and www
         $href = remove_www(remove_http($href));
-        $href = str_replace(array('twitter.com', '/lists', '/memberships', '#!/'), '', $href);
+        $href = str_replace(array(
+            'twitter.com',
+            '/lists',
+            '/memberships',
+            '/intent',
+            '#!/'
+        ), '', $href);
         $href = rtrim(ltrim($href, '/'), '/');
         //at this point we should have a single username hopefully.
         //we'll check for any forward slashes and return the first segment if so
@@ -181,10 +202,10 @@ class Twitter_finder {
             $href = explode('/', $href);
             return $href[0];
         }
-        
+
         return $href;
     }
-    
+
     //------------------------------------------------------------------------------
 
     /**
@@ -225,8 +246,13 @@ class Twitter_finder {
      * @return bool
      * @author James Blackwell
      */
-    private function is_anchor_follow_link($anchor)
+    private function is_anchor_follow_link($a)
     {
+        $anchor = $a->nodeValue;
+
+        if ($anchor == '')
+            $anchor = $this->parse_anchor_text($a);
+        
         $needles = array(
             'follow us',
             'follow me',
@@ -245,6 +271,64 @@ class Twitter_finder {
             return TRUE;
 
         return FALSE;
+    }
+
+    //------------------------------------------------------------------------------
+
+    /**
+     * In the event a text anchor text is not returned
+     * this can be called to get the inner html,
+     * parse it and search for the alt or title attr as it's
+     * likely to be an image.
+     *
+     * @author James Blackwell
+     * @return string
+     */
+    private function parse_anchor_text($element)
+    {
+        //get the inner html
+        $element = $this->dom_inner_html($element);
+
+        $tmp_dom = new DOMDocument();
+        //suppress errors for bad html
+        @$tmp_dom->loadHTML($element);
+
+        //loop through the image in the anchor text, return either alt of title
+        //of first one found
+        foreach ($tmp_dom->getElementsByTagName("img") as $img)
+        {
+            $title = $img->getAttribute("title");
+            if ($title != '')
+                return $title;
+            
+            $alt = $img->getAttribute("alt");
+            if ($alt != '')
+                return $alt;
+        }
+        return FALSE;
+    }
+
+    //------------------------------------------------------------------------------
+
+    /**
+     * Gets the inner html for an element
+     *
+     * @author anon
+     * @param object
+     * @return string
+     */
+
+    private function dom_inner_html($element)
+    {
+        $innerHTML = "";
+        $children = $element->childNodes;
+        foreach ($children as $child)
+        {
+            $tmp_dom = new DOMDocument();
+            $tmp_dom->appendChild($tmp_dom->importNode($child, true));
+            $innerHTML .= trim($tmp_dom->saveHTML());
+        }
+        return $innerHTML;
     }
 
     //------------------------------------------------------------------------------
